@@ -1,0 +1,190 @@
+"""
+Упрощенный парсер Кинопоиска - работает без установки библиотек!
+"""
+
+import json
+import csv
+import urllib.request
+import urllib.parse
+from typing import List, Dict
+
+
+class SimpleKinopoiskParser:
+    """
+    Упрощенный парсер для демонстрации работы с данными
+    """
+    
+    def __init__(self):
+        # Пример данных о фильмах
+        self.movies_database = [
+            {
+                'id': 1,
+                'title': 'Интерстеллар',
+                'original_title': 'Interstellar',
+                'year': '2014',
+                'rating': 8.6,
+                'votes_count': 752634,
+                'genre': ['фантастика', 'драма', 'приключения'],
+                'country': ['США', 'Великобритания', 'Канада'],
+                'director': ['Кристофер Нолан'],
+                'cast': ['Мэттью Макконахи', 'Энн Хэтэуэй', 'Джессика Честейн'],
+                'duration': '169 мин.',
+                'description': 'Когда засуха приводит человечество к продовольственному кризису, коллектив исследователей и учёных отправляется сквозь червоточину в путешествие, чтобы превзойти прежние ограничения для космических путешествий человека и найти планету с подходящими для человечества условиями.',
+                'url': 'https://www.kinopoisk.ru/film/258687/'
+            },
+            {
+                'id': 2,
+                'title': 'Начало',
+                'original_title': 'Inception',
+                'year': '2010',
+                'rating': 8.7,
+                'votes_count': 832451,
+                'genre': ['фантастика', 'боевик', 'триллер'],
+                'country': ['США', 'Великобритания'],
+                'director': ['Кристофер Нолан'],
+                'cast': ['Леонардо ДиКаприо', 'Джозеф Гордон-Левитт', 'Эллен Пейдж'],
+                'duration': '148 мин.',
+                'description': 'Кобб — талантливый вор, лучший из лучших в опасном искусстве извлечения: он крадет ценные секреты из глубин подсознания во время сна, когда человеческий разум наиболее уязвим.',
+                'url': 'https://www.kinopoisk.ru/film/447301/'
+            },
+            {
+                'id': 3,
+                'title': 'Зеленая книга',
+                'original_title': 'Green Book',
+                'year': '2018',
+                'rating': 8.4,
+                'votes_count': 456321,
+                'genre': ['биография', 'комедия', 'драма'],
+                'country': ['США'],
+                'director': ['Питер Фаррелли'],
+                'cast': ['Вигго Мортенсен', 'Махершала Али', 'Линда Карделлини'],
+                'duration': '130 мин.',
+                'description': '1960-е годы. После закрытия нью-йоркского ночного клуба на ремонт вышибала Тони по прозвищу Болтун ищет подработку на пару месяцев.',
+                'url': 'https://www.kinopoisk.ru/film/1102977/'
+            }
+        ]
+    
+    def get_all_movies(self) -> List[Dict]:
+        """Возвращает все фильмы из базы данных"""
+        return self.movies_database
+    
+    def search_movies(self, query: str, limit: int = 5) -> List[Dict]:
+        """Поиск фильмов по названию"""
+        query = query.lower()
+        results = []
+        
+        for movie in self.movies_database:
+            if (query in movie['title'].lower() or 
+                query in movie['original_title'].lower() or
+                any(query in genre for genre in movie['genre'])):
+                results.append(movie)
+        
+        return results[:limit]
+    
+    def get_movie_by_id(self, movie_id: int) -> Dict:
+        """Получить фильм по ID"""
+        for movie in self.movies_database:
+            if movie['id'] == movie_id:
+                return movie
+        return {}
+
+
+class DataExporter:
+    """Класс для экспорта данных в различные форматы"""
+    
+    @staticmethod
+    def to_json(data: List[Dict], filename: str):
+        """Сохраняет данные в JSON файл"""
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f" Данные сохранены в {filename}")
+        except Exception as e:
+            print(f" Ошибка при сохранении JSON: {e}")
+    
+    @staticmethod
+    def to_csv(data: List[Dict], filename: str):
+        """Сохраняет данные в CSV файл"""
+        if not data:
+            print(" Нет данных для сохранения")
+            return
+            
+        try:
+            fieldnames = data[0].keys()
+            with open(filename, 'w', encoding='utf-8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+            print(f" Данные сохранены в {filename}")
+        except Exception as e:
+            print(f" Ошибка при сохранении CSV: {e}")
+    
+    @staticmethod
+    def to_txt(data: List[Dict], filename: str):
+        """Сохраняет данные в текстовый файл"""
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write("=" * 60 + "\n")
+                f.write("КАРТОТЕКА ФИЛЬМОВ КИНОПОИСК\n")
+                f.write("=" * 60 + "\n\n")
+                
+                for i, movie in enumerate(data, 1):
+                    f.write(f"ФИЛЬМ #{i}\n")
+                    f.write(f"{'=' * 40}\n")
+                    f.write(f" Название: {movie.get('title', 'Не указано')}\n")
+                    f.write(f" Оригинальное название: {movie.get('original_title', 'Не указано')}\n")
+                    f.write(f" Год: {movie.get('year', 'Не указано')}\n")
+                    f.write(f" Рейтинг: {movie.get('rating', 0)}/10\n")
+                    f.write(f" Количество оценок: {movie.get('votes_count', 0)}\n")
+                    f.write(f" Жанр: {', '.join(movie.get('genre', []))}\n")
+                    f.write(f" Страна: {', '.join(movie.get('country', []))}\n")
+                    f.write(f" Режиссер: {', '.join(movie.get('director', []))}\n")
+                    f.write(f" Актеры: {', '.join(movie.get('cast', []))}\n")
+                    f.write(f" Продолжительность: {movie.get('duration', 'Не указано')}\n")
+                    f.write(f" Описание: {movie.get('description', 'Не указано')}\n")
+                    f.write(f" URL: {movie.get('url', 'Не указано')}\n")
+                    f.write("\n" + "=" * 60 + "\n\n")
+            
+            print(f" Данные сохранены в {filename}")
+        except Exception as e:
+            print(f" Ошибка при сохранении TXT: {e}")
+
+
+def main():
+    """Главная функция - демонстрация работы парсера"""
+    print(" ПАРСЕР КИНОПОИСКА")
+    print("=" * 50)
+    
+    # Создаем экземпляры классов
+    parser = SimpleKinopoiskParser()
+    exporter = DataExporter()
+    
+    # Получаем все фильмы
+    all_movies = parser.get_all_movies()
+    print(f" Всего фильмов в базе: {len(all_movies)}")
+    
+    # Сохраняем в разные форматы
+    print("\n Сохранение данных...")
+    exporter.to_json(all_movies, "movies_data.json")
+    exporter.to_csv(all_movies, "movies_data.csv")
+    exporter.to_txt(all_movies, "movies_data.txt")
+    
+    # Демонстрация поиска
+    print("\n Демонстрация поиска:")
+    search_query = "интерстеллар"
+    search_results = parser.search_movies(search_query)
+    print(f"По запросу '{search_query}' найдено: {len(search_results)} фильмов")
+    
+    for movie in search_results:
+        print(f"  - {movie['title']} ({movie['year']}) - рейтинг: {movie['rating']}")
+    
+    print("\n Готово! Проверьте созданные файлы:")
+    print("    movies_data.json")
+    print("    movies_data.csv") 
+    print("    movies_data.txt")
+    print("\n Для реального парсинга сайта установите библиотеки:")
+    print("   pip install requests beautifulsoup4 lxml")
+
+
+if __name__ == "__main__":
+    main()
